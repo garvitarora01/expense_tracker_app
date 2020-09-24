@@ -6,7 +6,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:keyboard_visibility/keyboard_visibility.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: SafeArea(
           child: Container(
             child: LoginPage(),
@@ -28,6 +29,17 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+setVisitingFlag() async {
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+  preferences.setBool("alreadyVisited", true);
+}
+
+getVisitingFlag() async {
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+  bool alreadyVisited = preferences.getBool("alreadyVisited") ?? false;
+  return alreadyVisited;
 }
 
 class LoginPage extends StatefulWidget {
@@ -48,18 +60,8 @@ class _LoginPageState extends State<LoginPage> {
   double _shutter2width = 0;
   double _opacityshutter1 = 1;
   double _varmargin = 100;
-  bool _keyboardVisible = false;
+
   @override
-  void initState() {
-    super.initState();
-
-    KeyboardVisibilityNotification().addNewListener(
-      onChange: (bool visible) {
-        _keyboardVisible = visible;
-      },
-    );
-  }
-
   Widget build(BuildContext context) {
     _width = MediaQuery.of(context).size.width;
     _height = MediaQuery.of(context).size.height;
@@ -77,9 +79,7 @@ class _LoginPageState extends State<LoginPage> {
     } else if (_page == 1) {
       _background = Colors.black;
       _title = Colors.white;
-      _shutter1height = _keyboardVisible
-          ? MediaQuery.of(context).size.width * 0.2
-          : MediaQuery.of(context).size.width * 0.4;
+      _shutter1height = MediaQuery.of(context).size.width * 0.4;
       _shutter1offset = MediaQuery.of(context).size.width * 0.0;
       _shutter2height = _height;
       _shutter1width = _width;
@@ -330,8 +330,45 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
+              FlatButton(
+                onPressed: () async {
+                  bool visitingFlag = await getVisitingFlag();
+                  setVisitingFlag();
+                  if (visitingFlag == true) {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context)=> //ToDo:HomeScreen,
+                    ));
+                  } else {
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context)=> LoginPage(),
+                    ));
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white30,
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(20.0),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  margin:
+                      EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
+                  child: Text(
+                    "Keep Me Signed In",
+                    style: GoogleFonts.roboto(
+                      fontSize: MediaQuery.of(context).size.width * 0.05,
+                      color: Colors.red,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
               EmailButton(
                 buttonText: "Login",
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.02,
               ),
               GestureDetector(
                 onTap: () {
